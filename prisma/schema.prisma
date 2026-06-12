@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  OWNER
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum RobotCategory {
+  DOMESTIC
+  MEDICAL
+  INDUSTRIAL
+  COMPANION
+  DELIVERY
+  SECURITY
+  CUSTOM
+}
+
+enum RobotStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  RETIRED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  EXPIRED
+}
+
+enum ReviewSubjectType {
+  ROBOT
+  CLIENT
+}
+
+enum PaymentProvider {
+  STRIPE
+  MPESA
+  MANUAL
+}
+
+enum PaymentStatus {
+  REQUIRES_ACTION
+  AUTHORIZED
+  CAPTURED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
+  MESSAGE_RECEIVED
+  SYSTEM
+}
+
+enum CancellationPolicy {
+  FLEXIBLE
+  MODERATE
+  STRICT
+}
+
+model User {
+  id                   String             @id @default(uuid()) @db.Uuid
+  email                String             @unique
+  passwordHash         String?
+  fullName             String
+  avatarUrl            String?
+  roles                UserRole[]         @default([CLIENT])
+  verificationStatus   VerificationStatus @default(UNVERIFIED)
+  identityDocumentUrl  String?
+  stripeCustomerId     String?
+  stripeAccountId      String?
+  preferredCurrency    String             @default("USD")
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  robots               Robot[]            @relation("OwnerRobots")
+  clientBookings       Booking[]          @relation("ClientBookings")
+  ownerBookings        Booking[]          @relation("OwnerBookings")
+  sentMessages         Message[]          @relation("SentMessages")
+  receivedMessages     Message[]          @relation("ReceivedMessages")
+  notifications        Notification[]
+  reviewsWritten       Review[]           @relation("ReviewsWritten")
+  favorites            Favorite[]
+}
+
+model Robot {
+  id                 String             @id @default(uuid()) @db.Uuid
+  ownerId            String             @db.Uuid
+  owner              User               @relation("OwnerRobots", fields: [ownerId], references: [id], onDelete: Cascade)
+  name               String
+  slug               String             @unique
+  category           RobotCategory
+  description        String
+  capabilities       String[]
+  photos             String[]
+  videoUrl           String?
+  modelNumber        String?
+  manufacturer       String?
+  yearManufactured   Int?
+  weightKg           Decimal?           @db.Decimal(8, 2)
+  batteryLifeHours   Decimal?           @db.Decimal(6, 2)
+  operatingRadius    Decimal?           @db.Decimal(10, 2)
+  requiresOperator   Boolean            @default(false)
+  pricePerHour       Decimal            @db.Decimal(10, 2)
+  pricePerDay        Decimal            @db.Decimal(10, 2)
+  depositAmount      Decimal            @db.Decimal(10, 2)
+  currency           String             @default("USD")
+  minRentalHours     Int                @default(1)
+  maxRentalHours     Int?
+  cancellationPolicy CancellationPolicy @default(MODERATE)
+  availabilityZone   String
+  latitude           Decimal            @db.Decimal(9, 6)
+  longitude          Decimal            @db.Decimal(9, 6)
+  isAvailable        Boolean            @default(true)
+  isVerified         Boolean            @default(false)
+  safetyRating       Decimal?           @db.Decimal(2, 1)
+  status             RobotStatus        @default(DRAFT)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  availability       Availability[]
+  bookings           Booking[]
+  reviews            Review[]
+  favorites          Favorite[]
+
+  @@index([category, status, isAvailable])
+  @@index([availabilityZone])
+}
+
+model Availability {
+  id          String   @id @default(uuid()) @db.Uuid
+  robotId     String   @db.Uuid
+  robot       Robot    @relation(fields: [robotId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime
+  isBlocked   Boolean  @default(false)
+  recurrence  String?
+  createdAt   DateTime @default(now())
+
+  @@index([robotId, startTime, endTime])
+}
+
+model Booking {
+  id                 String        @id @default(uuid()) @db.Uuid
+  clientId           String        @db.Uuid
+  robotId            String        @db.Uuid
+  ownerId            String        @db.Uuid
+  client             User          @relation("ClientBookings", fields: [clientId], references: [id])
+  owner              User          @relation("OwnerBookings", fields: [ownerId], references: [id])
+  robot              Robot         @relation(fields: [robotId], references: [id])
+  taskDescription    String
+  requestedStart     DateTime
+  requestedEnd       DateTime
+  confirmedStart     DateTime?
+  confirmedEnd       DateTime?
+  expiresAt          DateTime
+  deliveryAddress    String
+  deliveryLatitude   Decimal       @db.Decimal(9, 6)
+  deliveryLongitude  Decimal       @db.Decimal(9, 6)
+  status             BookingStatus @default(PENDING)
+  totalHours         Decimal       @db.Decimal(8, 2)
+  subtotal           Decimal       @db.Decimal(10, 2)
+  clientServiceFee   Decimal       @db.Decimal(10, 2)
+  ownerServiceFee    Decimal       @db.Decimal(10, 2)
+  depositAmount      Decimal       @db.Decimal(10, 2)
+  ownerPayout        Decimal       @db.Decimal(10, 2)
+  currency           String
+  depositRefunded    Boolean       @default(false)
+  cancellationReason String?
+  rejectionReason    String?
+  ownerNotes         String?
+  clientNotes        String?
+  safetyAcknowledged Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  payments           Payment[]
+  reviews            Review[]
+  messages           Message[]
+  damageReports      DamageReport[]
+
+  @@index([clientId, status])
+  @@index([ownerId, status])
+  @@index([robotId, requestedStart, requestedEnd])
+}
+
+model Payment {
+  id                  String          @id @default(uuid()) @db.Uuid
+  bookingId           String          @db.Uuid
+  booking             Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  provider            PaymentProvider
+  providerReference   String?
+  status              PaymentStatus   @default(REQUIRES_ACTION)
+  authorizedAmount    Decimal         @db.Decimal(10, 2)
+  capturedAmount      Decimal         @default(0) @db.Decimal(10, 2)
+  currency            String
+  metadata            Json?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([provider, providerReference])
+}
+
+model Review {
+  id          String            @id @default(uuid()) @db.Uuid
+  bookingId   String            @db.Uuid
+  booking     Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewerId  String            @db.Uuid
+  reviewer    User              @relation("ReviewsWritten", fields: [reviewerId], references: [id])
+  robotId     String?           @db.Uuid
+  robot       Robot?            @relation(fields: [robotId], references: [id])
+  subjectType ReviewSubjectType
+  subjectId   String            @db.Uuid
+  rating      Int
+  comment     String
+  isPublic    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+
+  @@unique([bookingId, reviewerId, subjectType])
+}
+
+model Message {
+  id          String   @id @default(uuid()) @db.Uuid
+  bookingId   String   @db.Uuid
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId    String   @db.Uuid
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  recipientId String   @db.Uuid
+  recipient   User     @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  body        String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+}
+
+model Notification {
+  id                String           @id @default(uuid()) @db.Uuid
+  userId            String           @db.Uuid
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              NotificationType
+  title             String
+  body              String
+  relatedEntityType String?
+  relatedEntityId   String?          @db.Uuid
+  isRead            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  robotId   String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  robot     Robot    @relation(fields: [robotId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, robotId])
+}
+
+model DamageReport {
+  id          String   @id @default(uuid()) @db.Uuid
+  bookingId   String   @db.Uuid
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  description String
+  evidence    String[]
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
