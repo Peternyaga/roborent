@@ -1,4 +1,5 @@
 import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function OwnerDashboardPage() {
   return (
@@ -21,7 +22,8 @@ export default function OwnerDashboardPage() {
           ))}
         </div>
         <section className="mt-6 rounded-lg border border-[#1E2A42] bg-[#131929] p-5">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
             <ShieldCheck className="text-[#00D68F]" />
             <div>
               <h2 className="text-xl font-semibold">KYC required before publishing</h2>
@@ -30,6 +32,13 @@ export default function OwnerDashboardPage() {
                 active listings.
               </p>
             </div>
+            </div>
+            <Link
+              className="rounded-md bg-[#00CFFF] px-4 py-3 text-sm font-semibold text-[#0A0E1A]"
+              href="/dashboard/owner/robots/new"
+            >
+              New robot
+            </Link>
           </div>
         </section>
       </div>
