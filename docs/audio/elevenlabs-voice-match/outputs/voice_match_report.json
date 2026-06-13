@@ -1,0 +1,11 @@
+{
+  "source_sample_rate": 48000,
+  "source_duration_seconds": 4.298,
+  "target_duration_seconds": 10.048,
+  "source_estimated_f0_hz": 237.6,
+  "target_estimated_f0_hz": 218.2,
+  "applied_pitch_factor": 0.9182,
+  "source_brightness_log_ratio": -2.3318,
+  "target_brightness_log_ratio": -2.4699,
+  "note": "This matches timbre/EQ and level locally. Accent cannot be changed by filtering alone."
+}
