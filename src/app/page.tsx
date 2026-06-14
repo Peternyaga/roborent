@@ -57,7 +57,7 @@ export default function Home() {
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
-                "url(https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1400&q=80)",
+                "linear-gradient(145deg, rgba(247, 240, 232, 0.08), rgba(28, 25, 23, 0.28)), url(https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1400&q=80), radial-gradient(circle at 28% 24%, rgba(20, 184, 166, 0.34), transparent 28%), radial-gradient(circle at 72% 22%, rgba(180, 83, 9, 0.26), transparent 24%), linear-gradient(135deg, #efe4d8 0%, #c8b99f 48%, #292524 100%)",
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-950/10 to-transparent" />

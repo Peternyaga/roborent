@@ -21,6 +21,7 @@ type Robot = {
 
 export function RobotMarketplace() {
   const [robots, setRobots] = useState<Robot[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [operator, setOperator] = useState("");
@@ -29,7 +30,8 @@ export function RobotMarketplace() {
   useEffect(() => {
     fetch("/api/v1/robots")
       .then((response) => response.json())
-      .then((result) => setRobots(result.robots ?? []));
+      .then((result) => setRobots(result.robots ?? []))
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredRobots = useMemo(
@@ -94,7 +96,16 @@ export function RobotMarketplace() {
         ) : null}
       </div>
 
-      {filteredRobots.length ? (
+      {loading ? (
+        <div className="grid gap-5 xl:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div
+              className="h-[420px] animate-pulse rounded-lg border border-stone-300 bg-[#FFFDF8]"
+              key={item}
+            />
+          ))}
+        </div>
+      ) : filteredRobots.length ? (
         <div className="grid gap-5 xl:grid-cols-3">
           {filteredRobots.map((robot) => (
             <RobotCard

@@ -24,6 +24,15 @@ type RobotCardProps = {
 export function RobotCard({ robot }: RobotCardProps) {
   const image = robot.image ?? robot.photos?.[0] ?? "";
   const city = robot.city ?? robot.availabilityZone ?? "Available region";
+  const visualBackground = image
+    ? [
+        "linear-gradient(145deg, rgba(247, 240, 232, 0.08), rgba(28, 25, 23, 0.34))",
+        `url(${image})`,
+        "radial-gradient(circle at 26% 24%, rgba(20, 184, 166, 0.34), transparent 26%)",
+        "radial-gradient(circle at 74% 20%, rgba(180, 83, 9, 0.24), transparent 24%)",
+        "linear-gradient(135deg, #efe4d8 0%, #c8b99f 48%, #292524 100%)",
+      ].join(", ")
+    : "radial-gradient(circle at 26% 24%, rgba(20, 184, 166, 0.34), transparent 26%), radial-gradient(circle at 74% 20%, rgba(180, 83, 9, 0.24), transparent 24%), linear-gradient(135deg, #efe4d8 0%, #c8b99f 48%, #292524 100%)";
 
   return (
     <Link
@@ -32,7 +41,7 @@ export function RobotCard({ robot }: RobotCardProps) {
     >
       <div
         className="h-56 bg-cover bg-center"
-        style={{ backgroundImage: `url(${image})` }}
+        style={{ backgroundImage: visualBackground }}
       />
       <div className="pointer-events-none absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-stone-200/40 to-transparent transition duration-700 group-hover:translate-x-[120%]" />
       <div className="space-y-4 p-5">

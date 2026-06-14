@@ -29,7 +29,15 @@ export default async function RobotDetailPage({ params }: RobotDetailPageProps) 
         <section>
           <div
             className="mb-6 h-[460px] rounded-lg border border-stone-300 bg-cover bg-center"
-            style={{ backgroundImage: `url(${robot.photos[0]})` }}
+            style={{
+              backgroundImage: [
+                "linear-gradient(145deg, rgba(247, 240, 232, 0.08), rgba(28, 25, 23, 0.28))",
+                `url(${robot.photos[0]})`,
+                "radial-gradient(circle at 26% 24%, rgba(20, 184, 166, 0.34), transparent 26%)",
+                "radial-gradient(circle at 74% 20%, rgba(180, 83, 9, 0.24), transparent 24%)",
+                "linear-gradient(135deg, #efe4d8 0%, #c8b99f 48%, #292524 100%)",
+              ].join(", "),
+            }}
           />
           <p className="font-mono text-xs uppercase text-stone-500">{robot.category}</p>
           <h1 className="mt-2 text-5xl font-semibold">{robot.name}</h1>
