@@ -9,7 +9,11 @@ type ApiState =
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  redirectTo: string;
+};
+
+export function RegisterForm({ redirectTo }: RegisterFormProps) {
   const router = useRouter();
   const [apiState, setApiState] = useState<ApiState>({
     status: "idle",
@@ -40,48 +44,54 @@ export function RegisterForm() {
     }
 
     setApiState({ status: "success", message: "Account created" });
-    router.push(isOwner ? "/dashboard/owner/robots/new" : "/dashboard/client");
+    const targetPath =
+      redirectTo === "/dashboard/client" && isOwner
+        ? "/dashboard/owner/robots/new"
+        : redirectTo;
+
+    router.push(targetPath);
+    router.refresh();
   }
 
   return (
-    <form onSubmit={onSubmit} className="w-full max-w-md rounded-lg border border-[#1E2A42] bg-[#131929] p-6">
-      <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#00CFFF]">
+    <form onSubmit={onSubmit} className="w-full max-w-md rounded-lg border border-stone-300 bg-[#FFFDF8] p-6">
+      <p className="font-mono text-xs uppercase text-stone-500">
         Join RoboRent
       </p>
       <h1 className="mt-2 text-3xl font-semibold">Create account</h1>
       <div className="mt-6 space-y-3">
         <input
-          className="w-full rounded-md border border-[#1E2A42] bg-[#0A0E1A] px-3 py-3 text-sm outline-none focus:border-[#00CFFF]"
+          className="w-full rounded-md border border-stone-300 bg-[#F7F0E8] px-3 py-3 text-sm outline-none focus:border-stone-900"
           name="fullName"
           placeholder="Full name"
           required
         />
         <input
-          className="w-full rounded-md border border-[#1E2A42] bg-[#0A0E1A] px-3 py-3 text-sm outline-none focus:border-[#00CFFF]"
+          className="w-full rounded-md border border-stone-300 bg-[#F7F0E8] px-3 py-3 text-sm outline-none focus:border-stone-900"
           name="email"
           placeholder="Email"
           required
           type="email"
         />
         <input
-          className="w-full rounded-md border border-[#1E2A42] bg-[#0A0E1A] px-3 py-3 text-sm outline-none focus:border-[#00CFFF]"
+          className="w-full rounded-md border border-stone-300 bg-[#F7F0E8] px-3 py-3 text-sm outline-none focus:border-stone-900"
           minLength={8}
           name="password"
           placeholder="Password"
           required
           type="password"
         />
-        <label className="flex items-center justify-between rounded-md border border-[#1E2A42] bg-[#0A0E1A] px-3 py-3 text-sm text-[#B8C4E8]">
+        <label className="flex items-center justify-between rounded-md border border-stone-300 bg-[#F7F0E8] px-3 py-3 text-sm text-stone-700">
           <span>Register as owner</span>
           <input
             checked={isOwner}
-            className="h-4 w-4 accent-[#00CFFF]"
+            className="h-4 w-4 accent-stone-950"
             onChange={(event) => setIsOwner(event.target.checked)}
             type="checkbox"
           />
         </label>
         <button
-          className="w-full rounded-md bg-[#00CFFF] px-4 py-3 text-sm font-semibold text-[#0A0E1A] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-md bg-stone-950 px-4 py-3 text-sm font-semibold text-[#F7F0E8] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={apiState.status === "loading"}
         >
           Register
@@ -91,8 +101,8 @@ export function RegisterForm() {
         <p
           className={`mt-4 rounded-md border px-3 py-2 text-sm ${
             apiState.status === "error"
-              ? "border-[#FF4757]/30 bg-[#FF4757]/10 text-[#FFB8C0]"
-              : "border-[#00D68F]/30 bg-[#00D68F]/10 text-[#9CF4D4]"
+              ? "border-red-300 bg-red-50 text-red-800"
+              : "border-emerald-300 bg-emerald-50 text-emerald-800"
           }`}
         >
           {apiState.message}

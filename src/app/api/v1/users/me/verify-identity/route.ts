@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { serializeDevUser, shouldUseDevAuthStore, updateDevUserIdentity } from "@/lib/dev-auth-store";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/session";
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
   const { user, response } = await requireCurrentUser();
 
   if (!user) {
-    return response;
+    return response ?? NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
   if (!user.roles.includes("OWNER")) {
@@ -23,6 +24,16 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid identity payload" }, { status: 400 });
+  }
+
+  if (shouldUseDevAuthStore()) {
+    const updatedUser = updateDevUserIdentity(user.id, parsed.data.identityDocumentUrl);
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ user: serializeDevUser(updatedUser) });
   }
 
   const updatedUser = await prisma.user.update({

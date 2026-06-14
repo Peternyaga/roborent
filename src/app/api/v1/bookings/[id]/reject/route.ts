@@ -1,25 +1,37 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { decideDevBooking } from "@/lib/dev-marketplace-store";
 import { shouldUseDevAuthStore } from "@/lib/dev-auth-store";
 import { getPaymentProvider } from "@/lib/payments";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/session";
 
-type ApproveBookingRouteProps = {
+type RejectBookingRouteProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function PATCH(_request: Request, { params }: ApproveBookingRouteProps) {
+const rejectSchema = z.object({
+  reason: z.string().min(3).optional(),
+});
+
+export async function PATCH(request: Request, { params }: RejectBookingRouteProps) {
   const { user, response } = await requireCurrentUser();
 
   if (!user) {
     return response ?? NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
+  const payload = await request.json().catch(() => ({}));
+  const parsed = rejectSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid rejection payload" }, { status: 400 });
+  }
+
   const { id } = await params;
 
   if (shouldUseDevAuthStore()) {
-    const booking = decideDevBooking(id, user.id, "APPROVED");
+    const booking = decideDevBooking(id, user.id, "REJECTED", parsed.data.reason);
 
     if (!booking) {
       return NextResponse.json({ error: "Pending booking not found" }, { status: 404 });
@@ -38,44 +50,29 @@ export async function PATCH(_request: Request, { params }: ApproveBookingRoutePr
   }
 
   if (booking.ownerId !== user.id) {
-    return NextResponse.json({ error: "Only the owner can approve this request" }, { status: 403 });
+    return NextResponse.json({ error: "Only the owner can reject this request" }, { status: 403 });
   }
 
-  const payment = booking.payments.find(
-    (item: { status: string }) => item.status === "AUTHORIZED",
-  );
+  const payment = booking.payments.find((item: { status: string }) => item.status === "AUTHORIZED");
 
-  if (!payment?.providerReference) {
-    return NextResponse.json({ error: "No authorized payment to capture" }, { status: 409 });
+  if (payment?.providerReference) {
+    const provider = getPaymentProvider();
+    await provider.release({ reference: payment.providerReference });
   }
-
-  const provider = getPaymentProvider();
-  await provider.capture({
-    reference: payment.providerReference,
-    amount: {
-      amount: Number(booking.subtotal) + Number(booking.clientServiceFee) + Number(booking.depositAmount),
-      currency: booking.currency,
-    },
-  });
 
   const updated = await prisma.booking.update({
     where: { id: booking.id },
     data: {
-      status: "APPROVED",
-      confirmedStart: booking.requestedStart,
-      confirmedEnd: booking.requestedEnd,
-      payments: {
-        update: {
-          where: { id: payment.id },
-          data: {
-            status: "CAPTURED",
-            capturedAmount:
-              Number(booking.subtotal) +
-              Number(booking.clientServiceFee) +
-              Number(booking.depositAmount),
-          },
-        },
-      },
+      status: "REJECTED",
+      rejectionReason: parsed.data.reason ?? "Owner declined the request",
+      payments: payment
+        ? {
+            update: {
+              where: { id: payment.id },
+              data: { status: "RELEASED" },
+            },
+          }
+        : undefined,
     },
     include: { payments: true },
   });

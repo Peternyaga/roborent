@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { findDevUserById, serializeDevUser, shouldUseDevAuthStore } from "@/lib/dev-auth-store";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_COOKIE = "roborent_session";
@@ -101,6 +102,12 @@ export async function getCurrentUser() {
 
   if (!payload) {
     return null;
+  }
+
+  if (shouldUseDevAuthStore()) {
+    const user = findDevUserById(payload.sub);
+
+    return user ? serializeDevUser(user) : null;
   }
 
   return prisma.user.findUnique({

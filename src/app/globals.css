@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e1a;
-  --foreground: #f0f4ff;
+  --background: #f7f0e8;
+  --foreground: #221f1a;
 }
 
 @theme inline {
@@ -28,6 +28,6 @@ a {
 }
 
 ::selection {
-  background: #00cfff;
-  color: #0a0e1a;
+  background: #221f1a;
+  color: #f7f0e8;
 }

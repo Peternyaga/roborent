@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createDevUser, shouldUseDevAuthStore } from "@/lib/dev-auth-store";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 
@@ -22,6 +23,36 @@ export async function POST(request: Request) {
   try {
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
     const roles = Array.from(new Set(parsed.data.roles));
+
+    if (shouldUseDevAuthStore()) {
+      const user = createDevUser({
+        email: parsed.data.email,
+        fullName: parsed.data.fullName,
+        passwordHash,
+        roles,
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: "Email is already registered" }, { status: 409 });
+      }
+
+      const response = NextResponse.json(
+        {
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: user.fullName,
+            roles: user.roles,
+            verificationStatus: user.verificationStatus,
+          },
+        },
+        { status: 201 },
+      );
+      setSessionCookie(response, user.id);
+
+      return response;
+    }
+
     const user = await prisma.user.create({
       data: {
         email: parsed.data.email.toLowerCase(),

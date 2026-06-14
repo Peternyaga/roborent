@@ -4,63 +4,70 @@ import { formatCurrency } from "@/lib/utils";
 
 type RobotCardProps = {
   robot: {
+    id?: string;
     name: string;
     slug: string;
     category: string;
-    city: string;
+    city?: string;
+    availabilityZone?: string;
     pricePerHour: number;
+    currency?: string;
     rating: number;
-    safetyRating: number;
+    safetyRating: number | null;
     requiresOperator: boolean;
-    image: string;
+    image?: string;
+    photos?: string[];
     capabilities: string[];
   };
 };
 
 export function RobotCard({ robot }: RobotCardProps) {
+  const image = robot.image ?? robot.photos?.[0] ?? "";
+  const city = robot.city ?? robot.availabilityZone ?? "Available region";
+
   return (
     <Link
       href={`/robots/${robot.slug}`}
-      className="group relative isolate overflow-hidden rounded-lg border border-[#1E2A42] bg-[#131929] shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-[#00CFFF]/60"
+      className="group relative isolate overflow-hidden rounded-lg border border-stone-300 bg-[#FFFDF8] shadow-sm transition hover:-translate-y-0.5 hover:border-stone-500"
     >
       <div
         className="h-56 bg-cover bg-center"
-        style={{ backgroundImage: `url(${robot.image})` }}
+        style={{ backgroundImage: `url(${image})` }}
       />
-      <div className="pointer-events-none absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-[#00CFFF]/20 to-transparent transition duration-700 group-hover:translate-x-[120%]" />
+      <div className="pointer-events-none absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-stone-200/40 to-transparent transition duration-700 group-hover:translate-x-[120%]" />
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#00CFFF]">
+            <p className="font-mono text-xs uppercase text-stone-500">
               {robot.category}
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-[#F0F4FF]">{robot.name}</h3>
-            <p className="text-sm text-[#8A9BC4]">{robot.city}</p>
+            <h3 className="mt-2 text-xl font-semibold text-stone-950">{robot.name}</h3>
+            <p className="text-sm text-stone-600">{city}</p>
           </div>
-          <div className="rounded-md border border-[#00CFFF]/25 bg-[#00CFFF]/10 px-3 py-2 text-right">
-            <p className="text-sm font-semibold text-[#F0F4FF]">
-              {formatCurrency(robot.pricePerHour)}
+          <div className="rounded-md border border-stone-300 bg-[#F7F0E8] px-3 py-2 text-right">
+            <p className="text-sm font-semibold text-stone-950">
+              {formatCurrency(robot.pricePerHour, robot.currency)}
             </p>
-            <p className="text-xs text-[#8A9BC4]">per hour</p>
+            <p className="text-xs text-stone-500">per hour</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {robot.capabilities.map((capability) => (
             <span
-              className="rounded-md border border-[#1E2A42] bg-[#0A0E1A] px-2.5 py-1 text-xs text-[#B8C4E8]"
+              className="rounded-md border border-stone-300 bg-[#F7F0E8] px-2.5 py-1 text-xs text-stone-700"
               key={capability}
             >
               {capability}
             </span>
           ))}
         </div>
-        <div className="flex items-center justify-between border-t border-[#1E2A42] pt-4 text-sm text-[#8A9BC4]">
+        <div className="flex items-center justify-between border-t border-stone-200 pt-4 text-sm text-stone-600">
           <span className="flex items-center gap-2">
-            <Sparkles size={16} className="text-[#FFB800]" /> {robot.rating}
+            <Sparkles size={16} className="text-amber-700" /> {robot.rating ?? "New"}
           </span>
           <span className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-[#00D68F]" /> Safety{" "}
-            {robot.safetyRating}
+            <ShieldCheck size={16} className="text-emerald-700" /> Safety{" "}
+            {robot.safetyRating ?? "Pending"}
           </span>
           <span>{robot.requiresOperator ? "Operator" : "Self-serve"}</span>
         </div>
